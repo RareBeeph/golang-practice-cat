@@ -16,17 +16,20 @@ func errHandle(err error) {
 func printFileContents(file *os.File) {
 	bytesRead, err := io.ReadAll(file)
 	errHandle(err)
+
 	fmt.Print(string(bytesRead))
 }
 
 func main() {
+	var toRead *os.File
+	var err error
+
 	// Prints bytes as strings from files, or from Stdin when argument is empty or "-", to Stdout
 	args := os.Args[1:]
 	if len(args) == 0 {
-		args[0] = "-"
+		args = append(args, "-")
 	}
-	var toRead *os.File
-	var err error
+
 	for _, file := range args {
 		if file == "-" {
 			toRead = os.Stdin
@@ -35,6 +38,7 @@ func main() {
 			errHandle(err)
 			defer toRead.Close()
 		}
+
 		printFileContents(toRead)
 	}
 }
