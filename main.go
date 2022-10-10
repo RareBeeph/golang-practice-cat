@@ -8,48 +8,33 @@ import (
 )
 
 func errHandle(err error) {
-	//End execution with a message on errors
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
 
-func handleFile(file os.File) {
-	for {
-		//Make a slice containing bytes from file
-		slice := make([]byte, 5)
-		int, err := file.Read(slice)
-
-		//Harmlessly return to calling function instead of erroring on EOF
-		if err == io.EOF {
-			return
-		}
-
-		//Print the read bytes to Stdout
-		errHandle(err)
-		fmt.Print(string(slice[0:int]))
-	}
+func printFileContents(file *os.File) {
+	bytesRead, err := io.ReadAll(file)
+	errHandle(err)
+	fmt.Print(string(bytesRead))
 }
 
 func main() {
-	//Get arguments from call; assume Stdin if none specified
+	// Prints bytes as strings from files, or from Stdin when argument is empty or "-", to Stdout
 	args := os.Args[1:]
 	if len(args) == 0 {
-		args = append(args, "-")
+		args[0] = "-"
 	}
-
-	//Iterate through arguments
+	var toRead *os.File
+	var err error
 	for _, file := range args {
-		var toRead *os.File
-
-		//Distinguish between Stdin and File arguments; handle them
 		if file == "-" {
 			toRead = os.Stdin
 		} else {
-			var err error
 			toRead, err = os.Open(file)
 			errHandle(err)
+			defer toRead.Close()
 		}
-		handleFile(*toRead)
+		printFileContents(toRead)
 	}
 }
