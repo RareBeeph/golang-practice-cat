@@ -14,13 +14,13 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "bphcat",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "A Go language clone of cat",
+	Long: `This is a clone of the shell builtin "cat",
+	which takes any number of files as arguments
+	and prints them to Stdout. It additionally can read
+	from Stdin if there are no arguments, or if one is "-".
+	
+	Example: ./bphcat main.go go.mod`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var toRead *os.File
 		var err error
