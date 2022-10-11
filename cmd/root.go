@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,7 +34,9 @@ var rootCmd = &cobra.Command{
 				toRead = os.Stdin
 			} else {
 				toRead, err = os.Open(fileArg)
-				errHandle(err)
+				if errHandle(err) {
+					continue
+				}
 				defer toRead.Close()
 			}
 			printFileContents(toRead)
@@ -43,10 +44,12 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func errHandle(err error) {
+func errHandle(err error) bool {
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		return true
 	}
+	return false
 }
 
 func printFileContents(file *os.File) {
