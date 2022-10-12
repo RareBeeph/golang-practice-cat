@@ -1,17 +1,12 @@
 package cmd
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"os"
 	"testing"
 )
-
-func handleErr(err error) {
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
 
 func TestMain(m *testing.M) {
 
@@ -20,48 +15,14 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestStdin(t *testing.T) {
-	stdin, errIn := os.CreateTemp("", "testStdin")
-	handleErr(errIn)
-	defer os.Remove(stdin.Name())
-	stdout, errOut := os.CreateTemp("", "testStdout")
-	handleErr(errOut)
-	defer os.Remove(stdout.Name())
-
-	stdin.Write([]byte(inputData))
-	stdin.Seek(0, 0)
-
-	os.Stdin = stdin
-	os.Stdout = stdout
-
-	rootCmd.Execute()
-	os.Stdout.Seek(0, 0)
-	bytesRead, err := io.ReadAll(os.Stdout)
-	handleErr(err)
-	log.Println(string(bytesRead))
-}
-
-func readFile(file string) string {
-	toRead, err := os.Open(file)
-	if err != nil {
-		return err.Error()
-	}
-	defer toRead.Close()
-
-	bytes, errRead := io.ReadAll(toRead)
-	errHandle(errRead)
-
-	return string(bytes)
-}
-
 var inputData = "Your test input data here\n"
 var goModOutput = readFile("../go.mod")
-var errorOutput = readFile("nonexistent")
+var errorOutput = readFile("nonexistent") + "\n"
 var flagtests = []struct {
 	inputArgs []string
 	output    string
 }{
-	{[]string{""}, inputData},
+	{[]string{}, inputData},
 	{[]string{"-"}, inputData},
 	{[]string{"../go.mod"}, goModOutput},
 	{[]string{"nonexistent"}, errorOutput},
@@ -88,43 +49,50 @@ func TestFlagArgs(t *testing.T) {
 	os.Stdout = stdout
 
 	for i, flag := range flagtests {
-		rootCmd.Args(rootCmd, []string{})
+		err := os.Truncate(os.Stdout.Name(), 0)
+		errHandle(err)
+
 		rootCmd.SetArgs(flag.inputArgs)
 		rootCmd.Execute()
+		os.Stdin.Seek(0, 0)
 		os.Stdout.Seek(0, 0)
+
 		bytesRead, err := io.ReadAll(os.Stdout)
 		handleErr(err)
+
+		output := trimWhitespace([]byte(flag.output))
+		bytes := trimWhitespace(bytesRead)
+
 		log.Printf("%v", flag.inputArgs)
-		if string(bytesRead) == flag.output {
+		if bytes == output {
 			log.Printf("%v: Match!", i)
 		} else {
-			log.Printf("%v: No match. Expected %s, found %s", i, flag.output, string(bytesRead))
+			log.Println([]byte(output))
+			log.Println([]byte(bytes))
+			log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
 		}
 	}
 }
 
-func TestFileIn(t *testing.T) {
+func handleErr(err error) {
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
 
-	inputArgs := []string{"../go.mod", "-", "../go.mod", "error", "../go.mod"}
+func readFile(file string) string {
+	toRead, err := os.Open(file)
+	if err != nil {
+		return err.Error()
+	}
+	defer toRead.Close()
 
-	stdin, errIn := os.CreateTemp("", "testStdin")
-	handleErr(errIn)
-	defer os.Remove(stdin.Name())
-	stdout, errOut := os.CreateTemp("", "testStdout")
-	handleErr(errOut)
-	defer os.Remove(stdout.Name())
+	bytes, errRead := io.ReadAll(toRead)
+	errHandle(errRead)
 
-	stdin.Write([]byte(inputData))
-	stdin.Seek(0, 0)
+	return string(bytes)
+}
 
-	os.Stdin = stdin
-	os.Stdout = stdout
-
-	rootCmd.SetArgs(inputArgs)
-
-	rootCmd.Execute()
-	os.Stdout.Seek(0, 0)
-	bytesRead, err := io.ReadAll(os.Stdout)
-	handleErr(err)
-	log.Println(string(bytesRead))
+func trimWhitespace(s []byte) string {
+	return string(bytes.Trim(s, "\x00\n"))
 }
