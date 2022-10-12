@@ -35,6 +35,9 @@ var flagtests = []struct {
 }
 
 func TestFlagArgs(t *testing.T) {
+	var output []byte
+	var bytes []byte
+
 	stdin, errIn := os.CreateTemp("", "testStdin")
 	handleErr(errIn)
 	defer os.Remove(stdin.Name())
@@ -43,32 +46,29 @@ func TestFlagArgs(t *testing.T) {
 	defer os.Remove(stdout.Name())
 
 	stdin.Write([]byte(inputData))
-	stdin.Seek(0, 0)
 
 	os.Stdin = stdin
 	os.Stdout = stdout
 
 	for i, flag := range flagtests {
+		os.Stdin.Seek(0, 0)
+		os.Stdout.Seek(0, 0)
 		err := os.Truncate(os.Stdout.Name(), 0)
 		errHandle(err)
 
 		rootCmd.SetArgs(flag.inputArgs)
 		rootCmd.Execute()
-		os.Stdin.Seek(0, 0)
-		os.Stdout.Seek(0, 0)
-
 		bytesRead, err := io.ReadAll(os.Stdout)
 		handleErr(err)
-
-		output := trimWhitespace([]byte(flag.output))
-		bytes := trimWhitespace(bytesRead)
+		output = trimWhitespace([]byte(flag.output))
+		bytes = trimWhitespace(bytesRead)
 
 		log.Printf("%v", flag.inputArgs)
-		if bytes == output {
+		if string(bytes) != string(output) {
 			log.Printf("%v: Match!", i)
 		} else {
-			log.Println([]byte(output))
-			log.Println([]byte(bytes))
+			log.Println(output)
+			log.Println(bytes)
 			log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
 		}
 	}
@@ -93,6 +93,6 @@ func readFile(file string) string {
 	return string(bytes)
 }
 
-func trimWhitespace(s []byte) string {
-	return string(bytes.Trim(s, "\x00\n"))
+func trimWhitespace(s []byte) []byte {
+	return bytes.Trim(s, "\x00\n")
 }
