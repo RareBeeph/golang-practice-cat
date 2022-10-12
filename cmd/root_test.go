@@ -9,35 +9,36 @@ import (
 )
 
 func TestMain(m *testing.M) {
-
 	exitCode := m.Run()
 
 	os.Exit(exitCode)
 }
 
-var inputData = "Your test input data here\n"
-var goModOutput = readFile("../go.mod")
+// Specify arguments and the expected outputs of rootCmd on them
 var errorOutput = readFile("nonexistent") + "\n"
+var goModOutput = readFile("../go.mod")
+var inputData = "Your test input data here\n"
 var flagtests = []struct {
 	inputArgs []string
 	output    string
 }{
-	{[]string{}, inputData},
-	{[]string{"-"}, inputData},
-	{[]string{"../go.mod"}, goModOutput},
-	{[]string{"nonexistent"}, errorOutput},
-	{[]string{"../go.mod", "-"}, goModOutput + inputData},
-	{[]string{"-", "../go.mod"}, inputData + goModOutput},
-	{[]string{"-", "nonexistent"}, inputData + errorOutput},
-	{[]string{"nonexistent", "-"}, errorOutput + inputData},
-	{[]string{"../go.mod", "nonexistent"}, goModOutput + errorOutput},
-	{[]string{"nonexistent", "../go.mod"}, errorOutput + goModOutput},
+	{[]string{}, inputData},                                           //Tests no args -> Stdin
+	{[]string{"-"}, inputData},                                        //Tests "-" -> Stdin
+	{[]string{"../go.mod"}, goModOutput},                              //Tests reading files
+	{[]string{"nonexistent"}, errorOutput},                            //Tests reporting file open errors without exiting
+	{[]string{"../go.mod", "-"}, goModOutput + inputData},             //Tests file to Stdin transition
+	{[]string{"-", "../go.mod"}, inputData + goModOutput},             //Tests Stdin to file transition
+	{[]string{"-", "nonexistent"}, inputData + errorOutput},           //Tests Stdin to error transition
+	{[]string{"nonexistent", "-"}, errorOutput + inputData},           //Tests error to Stdin transition
+	{[]string{"../go.mod", "nonexistent"}, goModOutput + errorOutput}, //Tests file to error transition
+	{[]string{"nonexistent", "../go.mod"}, errorOutput + goModOutput}, //Tests error to file transition
 }
 
 func TestFlagArgs(t *testing.T) {
 	var output []byte
 	var bytes []byte
 
+	// Create temporary files to read/write Stdin and Stdout
 	stdin, errIn := os.CreateTemp("", "testStdin")
 	handleErr(errIn)
 	defer os.Remove(stdin.Name())
@@ -45,12 +46,12 @@ func TestFlagArgs(t *testing.T) {
 	handleErr(errOut)
 	defer os.Remove(stdout.Name())
 
-	stdin.Write([]byte(inputData))
-
 	os.Stdin = stdin
 	os.Stdout = stdout
+	stdin.Write([]byte(inputData))
 
 	for i, flag := range flagtests {
+		// Reset initial conditions between each test
 		err := os.Truncate(os.Stdout.Name(), 0)
 		errHandle(err)
 		os.Stdin.Seek(0, 0)
