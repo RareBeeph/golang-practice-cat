@@ -45,11 +45,11 @@ var rootCmd = &cobra.Command{
 }
 
 func errHandle(err error) bool {
-	if err != nil {
+	errored := (err != nil)
+	if errored {
 		fmt.Println(err)
-		return true
 	}
-	return false
+	return errored
 }
 
 func printFileContents(file *os.File) {
