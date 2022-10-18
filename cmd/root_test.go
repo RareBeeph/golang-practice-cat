@@ -50,8 +50,11 @@ func TestFlagArgs(t *testing.T) {
 	os.Stdout = stdout
 	stdin.Write([]byte(inputData))
 
+	log.SetFlags(0)
 	for i, flag := range flagtests {
 		// Reset initial conditions between each test
+		log.SetOutput(os.Stdout)
+
 		err := os.Truncate(os.Stdout.Name(), 0)
 		errHandle(err)
 		os.Stdin.Seek(0, 0)
@@ -65,6 +68,7 @@ func TestFlagArgs(t *testing.T) {
 		output = trimWhitespace([]byte(flag.output))
 		bytes = trimWhitespace(bytesRead)
 
+		log.SetOutput(os.Stderr)
 		log.Printf("%v", flag.inputArgs)
 		if string(bytes) == string(output) {
 			log.Printf("%v: Match!", i)

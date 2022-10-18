@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ var rootCmd = &cobra.Command{
 func errHandle(err error) bool {
 	errored := (err != nil)
 	if errored {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return errored
 }
