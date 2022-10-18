@@ -27,9 +27,22 @@ func TestMain(m *testing.M) {
 }
 
 // Specify arguments and the expected outputs of rootCmd on them
-var errorOutput = readFile("nonexistent") + "\n"
-var goModOutput = readFile("../go.mod")
-var inputData = "Your test input data here\n"
+func fileToString(file string) string {
+	toRead, err := os.Open(file)
+	if err != nil {
+		return err.Error()
+	}
+	defer toRead.Close()
+
+	bytes, _ := io.ReadAll(toRead)
+
+	return string(bytes)
+}
+
+const inputData = "Your test input data here\n"
+
+var errorOutput = fileToString("nonexistent") + "\n"
+var goModOutput = fileToString("../go.mod")
 var flagtests = []struct {
 	inputArgs []string
 	output    string
@@ -44,6 +57,10 @@ var flagtests = []struct {
 	{[]string{"nonexistent", "-"}, errorOutput + inputData},           // Tests error to Stdin transition
 	{[]string{"../go.mod", "nonexistent"}, goModOutput + errorOutput}, // Tests file to error transition
 	{[]string{"nonexistent", "../go.mod"}, errorOutput + goModOutput}, // Tests error to file transition
+}
+
+func trimWhitespace(s []byte) []byte {
+	return bytes.Trim(s, "\x00\n")
 }
 
 func TestFlagArgs(t *testing.T) {
@@ -75,21 +92,4 @@ func TestFlagArgs(t *testing.T) {
 			log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
 		}
 	}
-}
-
-func readFile(file string) string {
-	toRead, err := os.Open(file)
-	if err != nil {
-		return err.Error()
-	}
-	defer toRead.Close()
-
-	bytes, errRead := io.ReadAll(toRead)
-	errHandle(errRead)
-
-	return string(bytes)
-}
-
-func trimWhitespace(s []byte) []byte {
-	return bytes.Trim(s, "\x00\n")
 }
