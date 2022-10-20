@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+const inputData = "Your test input data here\n"
+
 func TestMain(m *testing.M) {
 	// Create temporary files to read/write Stdin and Stdout
 	stdin, _ := os.CreateTemp("", "testStdin")
@@ -27,36 +29,16 @@ func TestMain(m *testing.M) {
 }
 
 // Specify arguments and the expected outputs of rootCmd on them
-func fileToString(file string) string {
+func fileToString(file string) (string, error) {
 	toRead, err := os.Open(file)
 	if err != nil {
-		return err.Error()
+		return "", err
 	}
 	defer toRead.Close()
 
 	bytes, _ := io.ReadAll(toRead)
 
-	return string(bytes)
-}
-
-const inputData = "Your test input data here\n"
-
-var errorOutput = fileToString("nonexistent") + "\n"
-var goModOutput = fileToString("../go.mod")
-var flagtests = []struct {
-	inputArgs []string
-	output    string
-}{
-	{[]string{}, inputData},                                           // Tests no args -> Stdin
-	{[]string{"-"}, inputData},                                        // Tests "-" -> Stdin
-	{[]string{"../go.mod"}, goModOutput},                              // Tests reading files
-	{[]string{"nonexistent"}, errorOutput},                            // Tests reporting file open errors without exiting
-	{[]string{"../go.mod", "-"}, goModOutput + inputData},             // Tests file to Stdin transition
-	{[]string{"-", "../go.mod"}, inputData + goModOutput},             // Tests Stdin to file transition
-	{[]string{"-", "nonexistent"}, inputData + errorOutput},           // Tests Stdin to error transition
-	{[]string{"nonexistent", "-"}, errorOutput + inputData},           // Tests error to Stdin transition
-	{[]string{"../go.mod", "nonexistent"}, goModOutput + errorOutput}, // Tests file to error transition
-	{[]string{"nonexistent", "../go.mod"}, errorOutput + goModOutput}, // Tests error to file transition
+	return string(bytes), nil
 }
 
 func trimWhitespace(s []byte) []byte {
@@ -66,6 +48,25 @@ func trimWhitespace(s []byte) []byte {
 func TestFlagArgs(t *testing.T) {
 	var output []byte
 	var bytes []byte
+
+	_, errOutPrelim := fileToString("nonexistent")
+	errorOutput := errOutPrelim.Error() + "\n"
+	goModOutput, _ := fileToString("../go.mod")
+	var flagtests = []struct {
+		inputArgs []string
+		output    string
+	}{
+		{[]string{}, inputData},                                           // Tests no args -> Stdin
+		{[]string{"-"}, inputData},                                        // Tests "-" -> Stdin
+		{[]string{"../go.mod"}, goModOutput},                              // Tests reading files
+		{[]string{"nonexistent"}, errorOutput},                            // Tests reporting file open errors without exiting
+		{[]string{"../go.mod", "-"}, goModOutput + inputData},             // Tests file to Stdin transition
+		{[]string{"-", "../go.mod"}, inputData + goModOutput},             // Tests Stdin to file transition
+		{[]string{"-", "nonexistent"}, inputData + errorOutput},           // Tests Stdin to error transition
+		{[]string{"nonexistent", "-"}, errorOutput + inputData},           // Tests error to Stdin transition
+		{[]string{"../go.mod", "nonexistent"}, goModOutput + errorOutput}, // Tests file to error transition
+		{[]string{"nonexistent", "../go.mod"}, errorOutput + goModOutput}, // Tests error to file transition
+	}
 
 	for i, flag := range flagtests {
 		// Reset initial conditions between each test
