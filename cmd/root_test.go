@@ -69,28 +69,30 @@ func TestFlagArgs(t *testing.T) {
 	}
 
 	for i, flag := range flagtests {
-		// Reset initial conditions between each test
-		log.SetOutput(os.Stdout)
+		t.Run("", func(inner *testing.T) {
+			// Reset initial conditions between each test
+			log.SetOutput(os.Stdout)
 
-		os.Truncate(os.Stdout.Name(), 0)
-		os.Stdin.Seek(0, 0)
+			os.Truncate(os.Stdout.Name(), 0)
+			os.Stdin.Seek(0, 0)
 
-		rootCmd.SetArgs(flag.inputArgs)
-		rootCmd.Execute()
-		os.Stdout.Seek(0, 0)
+			rootCmd.SetArgs(flag.inputArgs)
+			rootCmd.Execute()
+			os.Stdout.Seek(0, 0)
 
-		bytesRead, _ := io.ReadAll(os.Stdout)
-		output = trimWhitespace([]byte(flag.output))
-		bytes = trimWhitespace(bytesRead)
+			bytesRead, _ := io.ReadAll(os.Stdout)
+			output = trimWhitespace([]byte(flag.output))
+			bytes = trimWhitespace(bytesRead)
 
-		log.SetOutput(os.Stderr)
-		log.Printf("%v", flag.inputArgs)
-		if string(bytes) == string(output) {
-			log.Printf("%v: Match!", i)
-		} else {
-			log.Println(output)
-			log.Println(bytes)
-			log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
-		}
+			log.SetOutput(os.Stderr)
+			log.Printf("%v", flag.inputArgs)
+			if string(bytes) == string(output) {
+				log.Printf("%v: Match!", i)
+			} else {
+				log.Println(output)
+				log.Println(bytes)
+				log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
+			}
+		})
 	}
 }
