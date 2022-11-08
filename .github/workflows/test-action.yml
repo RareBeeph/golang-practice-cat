@@ -1,7 +1,16 @@
 name: Test Action
 on: push
+
 jobs: 
   test-job:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Echoed a thing."
+      - uses: actions/checkout@v3
+        with: 
+          ref: 'actions-implementation'
+          
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: './go.mod'
+          
+      - run: go test -v ./cmd
