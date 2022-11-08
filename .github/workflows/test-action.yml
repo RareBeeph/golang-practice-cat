@@ -1,0 +1,7 @@
+name: Test Action
+on: push
+jobs: 
+  test-job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Echoed a thing."
