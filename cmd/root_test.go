@@ -92,6 +92,7 @@ func TestFlagArgs(t *testing.T) {
 				log.Println(output)
 				log.Println(bytes)
 				log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
+				t.Fail()
 			}
 		})
 	}
