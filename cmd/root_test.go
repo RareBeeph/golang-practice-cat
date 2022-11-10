@@ -46,8 +46,6 @@ func trimWhitespace(s []byte) []byte {
 }
 
 func TestFlagArgs(t *testing.T) {
-	var testExitCode int
-
 	var output []byte
 	var bytes []byte
 
@@ -94,12 +92,8 @@ func TestFlagArgs(t *testing.T) {
 				log.Println(output)
 				log.Println(bytes)
 				log.Printf("%v: No match. Expected %s, found %s", i, output, bytes)
-				testExitCode = 1
+				t.Fail()
 			}
 		})
-	}
-
-	if testExitCode != 0 {
-		os.Exit(testExitCode)
 	}
 }
